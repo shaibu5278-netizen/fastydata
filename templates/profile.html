@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header text-center">
+        <h3>My Profile</h3>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-3">
+          <img src="https://ui-avatars.com/api/?name={{ user.first_name|default('U') }}+{{ user.last_name|default('S') }}&background=random&size=64" class="rounded-circle" width="64" height="64" alt="avatar">
+        </div>
+        <dl class="row">
+          <dt class="col-sm-4">First Name</dt><dd class="col-sm-8">{{ user.first_name }}</dd>
+          <dt class="col-sm-4">Last Name</dt><dd class="col-sm-8">{{ user.last_name }}</dd>
+          <dt class="col-sm-4">Username</dt><dd class="col-sm-8">{{ user.username }}</dd>
+          <dt class="col-sm-4">Email</dt><dd class="col-sm-8">{{ user.email }}</dd>
+          <dt class="col-sm-4">Phone Number</dt><dd class="col-sm-8">{{ user.phone_number }}</dd>
+          <dt class="col-sm-4">User Type</dt><dd class="col-sm-8">{{ user.user_type }}</dd>
+        </dl>
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('edit_profile') }}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

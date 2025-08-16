@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">My Orders</h2>
+    <form method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-md-3">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or '' }}">
+        </div>
+        <div class="col-md-3">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or '' }}">
+        </div>
+        <div class="col-md-3">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">All</option>
+                <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="topup_for" class="form-label">Top Up For</label>
+            <input type="text" id="topup_for" name="topup_for" class="form-control" value="{{ topup_for or '' }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+        {% if start_date or end_date or status or topup_for %}
+        <div class="col-md-1">
+            <a href="{{ url_for('orders') }}" class="btn btn-secondary w-100">Reset</a>
+        </div>
+        {% endif %}
+    </form>
+    {% if orders %}
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th><a href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort='created_at', direction='asc' if sort != 'created_at' or direction == 'desc' else 'desc', page=1) }}">Date{% if sort == 'created_at' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort='package_id', direction='asc' if sort != 'package_id' or direction == 'desc' else 'desc', page=1) }}">Package{% if sort == 'package_id' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort='package_item_id', direction='asc' if sort != 'package_item_id' or direction == 'desc' else 'desc', page=1) }}">Item{% if sort == 'package_item_id' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort='amount', direction='asc' if sort != 'amount' or direction == 'desc' else 'desc', page=1) }}">Amount{% if sort == 'amount' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort='status', direction='asc' if sort != 'status' or direction == 'desc' else 'desc', page=1) }}">Status{% if sort == 'status' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort='topup_for', direction='asc' if sort != 'topup_for' or direction == 'desc' else 'desc', page=1) }}">Top Up For{% if sort == 'topup_for' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ order.package.name }}</td>
+                <td>{{ order.package_item.description if order.package_item else '' }}</td>
+                <td>{{ order.amount }}</td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.topup_for or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Orders pagination">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort=sort, direction=direction, page=1) }}">First</a>
+            </li>
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort=sort, direction=direction, page=pagination.prev_num) }}">Previous</a>
+            </li>
+            {% for p in range(1, pagination.pages + 1) %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort=sort, direction=direction, page=p) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort=sort, direction=direction, page=pagination.next_num) }}">Next</a>
+            </li>
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('orders', start_date=start_date, end_date=end_date, status=status, topup_for=topup_for, sort=sort, direction=direction, page=pagination.pages) }}">Last</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info">You have no orders yet.</div>
+    {% endif %}
+</div>
+{% endblock %} 

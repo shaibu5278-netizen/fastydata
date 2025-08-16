@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}All Transactions{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">All Transactions</h2>
+    <form method="get" class="mb-3" id="filterForm">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ q }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Type</label>
+                <select name="txn_type" class="form-select">
+                    <option value="">All</option>
+                    <option value="credit" {% if txn_type=='credit' %}selected{% endif %}>Credit</option>
+                    <option value="debit" {% if txn_type=='debit' %}selected{% endif %}>Debit</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Package</label>
+                <select name="package_id" class="form-select">
+                    <option value="">All</option>
+                    {% for pkg in packages %}
+                    <option value="{{ pkg.id }}" {% if package_id|int==pkg.id %}selected{% endif %}>{{ pkg.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Payment Type</label>
+                <select name="payment_type_id" class="form-select">
+                    <option value="">All</option>
+                    {% for pt in payment_types %}
+                    <option value="{{ pt.id }}" {% if payment_type_id|int==pt.id %}selected{% endif %}>{{ pt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Min Amount</label>
+                <input type="number" step="0.01" name="min_amount" class="form-control" value="{{ min_amount }}">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Max Amount</label>
+                <input type="number" step="0.01" name="max_amount" class="form-control" value="{{ max_amount }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s|capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-success w-100" type="button" onclick="exportCSV()">Export CSV</button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="button" onclick="exportExcel()">Export Excel</button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-danger w-100" type="button" onclick="exportPDF()">Export PDF</button>
+            </div>
+        </div>
+    </form>
+    <div class="table-responsive mt-3">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>User</th>
+                    <th>Account Number</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Reference</th>
+                    <th>Payment Type</th>
+                    <th>Balance After</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in transactions %}
+                <tr>
+                    <td>{{ txn.account.user.username if txn.account and txn.account.user else '' }}</td>
+                    <td>{{ txn.account.account_number if txn.account else '' }}</td>
+                    <td>{{ txn.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ txn.transaction_type|capitalize }}</td>
+                    <td>{{ txn.amount }}</td>
+                    <td>{{ txn.reference_number }}</td>
+                    <td>{{ txn.payment_type.name if txn.payment_type else '' }}</td>
+                    <td>{{ txn.balance_after }}</td>
+                    <td>{{ txn.description or '' }}</td>
+                    <td>{{ txn.status|capitalize }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_transaction', txn_id=txn.id) }}" class="btn btn-primary btn-sm">Edit</a>
+                        <form method="POST" action="{{ url_for('delete_transaction', txn_id=txn.id) }}" style="display:inline-block;" onsubmit="return confirm('Delete this transaction?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="11" class="text-center">No transactions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+function exportCSV() {
+    // Build the export URL with all current filter params
+    const form = document.getElementById('filterForm');
+    const params = new URLSearchParams(new FormData(form)).toString();
+    window.location = "{{ url_for('export_transactions') }}?" + params;
+}
+function exportExcel() {
+    const form = document.getElementById('filterForm');
+    const params = new URLSearchParams(new FormData(form)).toString();
+    window.location = "{{ url_for('export_transactions_excel') }}?" + params;
+}
+function exportPDF() {
+    const form = document.getElementById('filterForm');
+    const params = new URLSearchParams(new FormData(form)).toString();
+    window.location = "{{ url_for('export_transactions_pdf') }}?" + params;
+}
+</script>
+{% endblock %} 

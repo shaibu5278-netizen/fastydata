@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Transactions</h2>
+    <div class="mb-3">
+        <a href="{{ url_for('add_transaction') }}" class="btn btn-success">Add Transaction</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Reference</th>
+                    <th>Payment Type</th>
+                    <th>Balance After</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in transactions %}
+                <tr>
+                    <td>{{ txn.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ txn.transaction_type|capitalize }}</td>
+                    <td>{{ txn.amount }}</td>
+                    <td>{{ txn.reference_number }}</td>
+                    <td>{{ txn.payment_type.name if txn.payment_type else '' }}</td>
+                    <td>{{ txn.balance_after }}</td>
+                    <td>{{ txn.description or '' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No transactions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

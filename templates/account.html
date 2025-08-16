@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">My Account</h2>
+    {% if account %}
+    <table class="table table-bordered w-50 mx-auto">
+        <tr><th>Account Number</th><td>{{ account.account_number }}</td></tr>
+        <tr><th>Balance</th><td>{{ account.balance }}</td></tr>
+        <tr><th>Created</th><td>{{ account.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+        <tr><th>Last Updated</th><td>{{ account.updated_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+    </table>
+    {% else %}
+    <div class="alert alert-warning text-center">No account found for your user.</div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>All Orders (Admin)</h2>
+    <form method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-md-4">
+            <label for="user_id" class="form-label">User</label>
+            <select id="user_id" name="user_id" class="form-select">
+                <option value="">All Users</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if user_id and user.id == user_id %}selected{% endif %}>{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or '' }}">
+        </div>
+        <div class="col-md-3">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or '' }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('export_orders_excel', user_id=user_id, start_date=start_date, end_date=end_date) }}" class="btn btn-outline-success me-2">Export Excel</a>
+        <a href="{{ url_for('export_orders_pdf', user_id=user_id, start_date=start_date, end_date=end_date) }}" class="btn btn-outline-danger">Export PDF</a>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th><a href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=1, per_page=per_page, sort='created_at', direction='asc' if sort != 'created_at' or direction == 'desc' else 'desc') }}">Date{% if sort == 'created_at' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=1, per_page=per_page, sort='user_id', direction='asc' if sort != 'user_id' or direction == 'desc' else 'desc') }}">User{% if sort == 'user_id' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=1, per_page=per_page, sort='package_id', direction='asc' if sort != 'package_id' or direction == 'desc' else 'desc') }}">Package{% if sort == 'package_id' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=1, per_page=per_page, sort='package_item_id', direction='asc' if sort != 'package_item_id' or direction == 'desc' else 'desc') }}">Item{% if sort == 'package_item_id' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=1, per_page=per_page, sort='amount', direction='asc' if sort != 'amount' or direction == 'desc' else 'desc') }}">Amount{% if sort == 'amount' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+                <th><a href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=1, per_page=per_page, sort='status', direction='asc' if sort != 'status' or direction == 'desc' else 'desc') }}">Status{% if sort == 'status' %} <span>{% if direction == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>{% endif %}</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr class="order-row" data-order-id="{{ order.id }}" style="cursor:pointer;">
+                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ order.account.user.username if order.account and order.account.user else '' }}</td>
+                <td>{{ order.package.name }}</td>
+                <td>{{ order.package_item.description if order.package_item else '' }}</td>
+                <td>{{ order.amount }}</td>
+                <td>
+                  <form method="POST" action="{{ url_for('admin_update_order_status') }}">
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <select name="status" onchange="this.form.submit()">
+                      <option value="Pending" {{ 'selected' if order.status == 'Pending' else '' }}>Pending</option>
+                      <option value="Processing" {{ 'selected' if order.status == 'Processing' else '' }}>Processing</option>
+                      <option value="Completed" {{ 'selected' if order.status == 'Completed' else '' }}>Completed</option>
+                    </select>
+                  </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">No orders found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Order pagination">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=pagination.prev_num, per_page=per_page, sort=sort, direction=direction) }}">Previous</a>
+            </li>
+            {% for p in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=p, per_page=per_page, sort=sort, direction=direction) }}">{{ p }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin_orders', user_id=user_id, start_date=start_date, end_date=end_date, page=pagination.next_num, per_page=per_page, sort=sort, direction=direction) }}">Next</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Order Details Modal -->
+<!-- <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="order-details-content">
+          <div class="text-center text-muted">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.order-row');
+    rows.forEach(row => {
+        row.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+            const content = document.getElementById('order-details-content');
+            content.innerHTML = '<div class="text-center text-muted">Loading...</div>';
+            fetch(`/admin/orders/${orderId}/json`)
+                .then(response => response.json())
+                .then(data => {
+                    content.innerHTML = `
+                        <dl class="row">
+                            <dt class="col-sm-3">Order ID</dt><dd class="col-sm-9">${data.id}</dd>
+                            <dt class="col-sm-3">Date</dt><dd class="col-sm-9">${data.date}</dd>
+                            <dt class="col-sm-3">User</dt><dd class="col-sm-9">${data.user}</dd>
+                            <dt class="col-sm-3">Email</dt><dd class="col-sm-9">${data.user_email || ''}</dd>
+                            <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">${data.user_phone || ''}</dd>
+                            <dt class="col-sm-3">Account #</dt><dd class="col-sm-9">${data.account_number}</dd>
+                            <dt class="col-sm-3">Package</dt><dd class="col-sm-9">${data.package}</dd>
+                            <dt class="col-sm-3">Item</dt><dd class="col-sm-9">${data.item}</dd>
+                            <dt class="col-sm-3">Amount</dt><dd class="col-sm-9">${data.amount}</dd>
+                            <dt class="col-sm-3">Status</dt><dd class="col-sm-9">${data.status}</dd>
+                        </dl>
+                    `;
+                })
+                .catch(() => {
+                    content.innerHTML = '<div class="text-danger">Failed to load order details.</div>';
+                });
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

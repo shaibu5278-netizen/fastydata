@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Purchase Package{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Purchase a Package</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="POST" id="purchaseForm" novalidate>
+        <div class="mb-3">
+            {{ form.package_id.label(class="form-label") }}
+            {{ form.package_id(class="form-select") }}
+            <div class="invalid-feedback">Please select a package.</div>
+        </div>
+        <div class="mb-3">
+            <label for="package_item_id" class="form-label">Select Package Item <span class="text-danger">*</span></label>
+            <select id="package_item_id" name="package_item_id" class="form-select" required aria-required="true">
+                <option value="">Select Package Item</option>
+            </select>
+            <div class="invalid-feedback">Please select a package item.</div>
+        </div>
+        <div class="mb-3">
+            <label for="topup_for" class="form-label">Top Up For <span class="text-danger">*</span></label>
+            <input type="tel" id="topup_for" name="topup_for" class="form-control" value="{{ topup_for|default(request.form.topup_for, true) }}" required aria-required="true" maxlength="15" pattern="^\\+?\\d{10,15}$">
+            <div class="invalid-feedback">Please enter a valid phone number (10-15 digits, numbers only, optional + at start).</div>
+        </div>
+        <div class="mb-3">
+            <span id="amount_display" class="fw-bold"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Purchase</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const packageSelect = document.getElementById('package_id');
+    const packageItemSelect = document.getElementById('package_item_id');
+    const amountDisplay = document.getElementById('amount_display');
+    const topupForInput = document.getElementById('topup_for');
+    function updatePackageItems() {
+        const packageId = packageSelect.value;
+        if (!packageId) {
+            packageItemSelect.innerHTML = '<option value="">Select Package Item</option>';
+            amountDisplay.textContent = '';
+            return;
+        }
+        fetch(`/api/package_items/${packageId}`)
+            .then(response => response.json())
+            .then(data => {
+                packageItemSelect.innerHTML = '';
+                if (data.items.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No items available';
+                    packageItemSelect.appendChild(opt);
+                    amountDisplay.textContent = '';
+                } else {
+                    data.items.forEach(function(item) {
+                        const opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.textContent = item.label;
+                        packageItemSelect.appendChild(opt);
+                    });
+                    const selectedItem = "{{ request.form.package_item_id|default('') }}";
+                    if (selectedItem) {
+                        packageItemSelect.value = selectedItem;
+                    } else {
+                        packageItemSelect.selectedIndex = 0;
+                    }
+                    updateAmountFromPackageItem();
+                }
+            });
+    }
+    function updateAmountFromPackageItem() {
+        const selectedOption = packageItemSelect.options[packageItemSelect.selectedIndex];
+        if (selectedOption && selectedOption.textContent) {
+            const match = selectedOption.textContent.match(/\$([0-9,.]+)/);
+            if (match) {
+                amountDisplay.textContent = `Price: $${match[1]}`;
+            } else {
+                amountDisplay.textContent = '';
+            }
+        }
+    }
+    if (packageSelect && packageItemSelect) {
+        packageSelect.addEventListener('change', updatePackageItems);
+        packageItemSelect.addEventListener('change', updateAmountFromPackageItem);
+        updatePackageItems();
+    }
+    // Client-side validation
+    const form = document.getElementById('purchaseForm');
+    form.addEventListener('submit', function(event) {
+        let valid = true;
+        if (!packageSelect.value) {
+            packageSelect.classList.add('is-invalid');
+            valid = false;
+        } else {
+            packageSelect.classList.remove('is-invalid');
+        }
+        if (!packageItemSelect.value) {
+            packageItemSelect.classList.add('is-invalid');
+            valid = false;
+        } else {
+            packageItemSelect.classList.remove('is-invalid');
+        }
+        if (!topupForInput.value.trim() || !/^\+?\d{10,15}$/.test(topupForInput.value.trim())) {
+            topupForInput.classList.add('is-invalid');
+            valid = false;
+        } else {
+            topupForInput.classList.remove('is-invalid');
+        }
+        if (!valid) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
+});
+</script>
+{% endblock %} 
